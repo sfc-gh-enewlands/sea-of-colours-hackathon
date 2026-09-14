@@ -2121,6 +2121,7 @@ set, with a test.
 | 44 | Adding Advanced's fourth night moved three reels between days without re-shooting their films, and a film carries its day burnt into the recorded chrome — so the modal said `NOX 03` over a day-4 board, and `adv_buy_chaff` still quoted 255 blue and pre-subsidy advice. All three re-shot (`adv_emp` needed `_EMP_TAKES` to leave it a spendable weapon on night four), and the reel-day/shoot-turn agreement is now a test | ✅ done (v1.36) | no |
 | 45 | The engine's night log is one shared feed with no owner column, and `get_view` put all twenty rows on every agent's percept: a rival's landing coordinates (private, §3.15) and a rival bot's rationale line in full. Nothing shipped read it. `recent_log` is now cut to rows naming no other seat; the blocks entitled to the whole log still get it | ✅ done (v1.38) | no |
 | 46 | V12's prompt rendered a rival's 600-blue arsenal as `emp=[0..3] chaff=[0..2]` — independent marginals that read as a joint range, describing 1200 blue under a 600 cap. A lone SNAP (100 blue) rendered no block at all, and `snap_hit` reached neither the reaction path nor the event renderer. The estimate now carries the decoded rack set and states it as "exactly ONE of these N"; warnings gate on `could_hold`, which carries its own minimum spend. Engine: `snap_launch` now counts in the public activity tally | ✅ done (v1.39) | no |
+| 56 | Same-hour cell hand-offs were settled by seat index rather than by §3.17's "two harvesters *arriving*" rule, so a rival landing on a cell you were lifting off either cost you nothing or cost you both harvesters and the whole hold, depending only on which seat `p1`/`p2` the engine walked first — 24% of stored player-days contain such an hour. Lift-and-land now resolves off an hour-start egress snapshot and is ruled a non-collision (§3.17.5) | 🟠 partial (v1.48 — step-away + converge still open) | no |
 
 ## 47. ✅ (DONE, v1.40) The SNAP doctrine named a move the menu could not offer
 
@@ -2714,3 +2715,84 @@ was never wrong — nothing checked what the copy came out as.
 `weapons_enabled=True`, so it continues to report green on a fork that
 cannot arm in play. It no longer hides *this* bug, but it is the same
 false green and wants its own fix.
+
+---
+
+## 56. 🟠 (PARTIAL, v1.48) Same-hour cell hand-offs were settled by seat index, not by the rules
+
+**Status (v1.48):** **Lift-and-land is fixed.** Step-away and converging
+steps are **still open** — see "Not fixed here" below.
+
+**Symptom.** A harvester dropping (or stepping) onto a cell another seat
+was lifting off during the same hour resolved two different ways
+depending on which seat the engine walked first:
+
+| | drop resolves first | lift resolves first |
+|---|---|---|
+| lifter's hoard | **0 red** | **500 red** |
+| lifter | damaged, cargo spilled | clean |
+| lander | damaged, stays in orbit | lands on the cell |
+| collision scar | yes | no |
+
+Identical orders on an identical board. `GameSession.players` is
+`("p1", "p2")`, fixed at construction and never shuffled, so it was
+always the same seat that resolved first and always the same seat whose
+loaded harvester could be rammed on the way out.
+
+**Root cause.** RULEBOOK §3.17 opens by colliding two harvesters
+*arriving* on one cell, but the engine implemented the four illustrated
+patterns underneath that sentence rather than the sentence itself.
+Anything the illustrations did not name fell through to the ordinary
+`for p in seats:` dispatch, where `try_drop_unit` / `try_step_unit` ask
+`_undamaged_harvesters_at` about **live** occupancy — and
+`try_pickup_unit` clears `hh.x = hh.y = None` the instant it runs. So
+the answer depended on loop order, which §3.10 and §3.13 both say has no
+rules standing. Same class as issue #18 (probe supersession), which was
+fixed for probes in v1.19 as a one-off rather than as a principle, which
+is why everything else still leaked.
+
+**How common.** Replaying the 141 stored seasons in this repo (731
+player-days) and counting hours where one seat's destination is a cell
+another seat is simultaneously vacating or arriving at, taking only the
+first such hour per day:
+
+| pattern | first-of-day occurrences |
+|---|---|
+| converge: two step into one empty cell | 84 |
+| step onto a cell being stepped off | 50 |
+| drop onto a cell being picked up from | 21 |
+| drop onto a cell being stepped off | 17 |
+| step onto a cell being picked up from | 4 |
+
+176 of 731 player-days — **24%** — contained at least one such hour.
+
+**Fix (lift-and-land only).** The hour loop now takes an hour-start
+*egress* snapshot (`_departing_harvesters`) before any seat acts, and
+passes it into the collision check as `departing_units`. It is the
+occupancy sibling of the hour-start *visibility* snapshot that v0.9.17
+added for exactly this reason. Deciding it up front is sound because
+every way a pickup can fail is a **static precondition** — no such
+harvester, lifter not in orbit, harvester already orbital — so no rival
+can falsify it mid-hour and leave a lander sharing a cell with a unit
+that never left. Scoped to this hour's egress only, to a pickup that can
+actually happen, and skipped for a seat whose slot chaff cancels.
+Pinned by `tests/test_egress_is_not_seat_ordered.py`, which runs each
+scenario with the roles swapped between seats and asserts the two runs
+agree. Ruled and written up as RULEBOOK §3.17.5.
+
+**Not fixed here.** Step-away hand-offs and two harvesters converging on
+one empty cell are still order-dependent, and by count they are the more
+common patterns. They cannot use the same trick: a step can be refused
+part-way through an hour (an EMP cloud, a snap-hot cell, a collision at
+its own destination), so "will this unit vacate?" is not answerable at
+hour start. Resolving them properly needs the dispatch ordered by
+dependency rather than by seat, plus the contention pre-pass generalised
+to group steps and drops together. That touches `applied[p]`, the
+`current_hour = max(applied) + 1` clock, the chaff and pre-empt
+branches, and replay frame order — the most special-cased loop in the
+engine — so it wants its own change and its own scenario harness.
+
+Converge is the mildest of the three: both harvesters wreck either way,
+and only the scar placement moves. It is still wrong — §3.17.3 says both
+wreck at their **original positions**, and today the first-resolving
+harvester's wreck sits on the contested cell instead.
