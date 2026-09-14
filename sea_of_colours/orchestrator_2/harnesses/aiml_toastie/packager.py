@@ -405,6 +405,22 @@ def _ranked_value(opt: Any, agent_view: Mapping[str, Any]) -> float:
     return base
 
 
+def _chaff_over_budget(options: Sequence[Any], agent_view: Mapping[str, Any]) -> set[str]:
+    stock = int(((agent_view.get("orbit") or {}).get("weapon_stock") or {}).get("chaff") or 0)
+    used = 0
+    rejected = set()
+    seen = set()
+    for option in options:
+        if option.kind != "chaff" or option.option_id in seen:
+            continue
+        seen.add(option.option_id)
+        if used >= stock:
+            rejected.add(option.option_id)
+        else:
+            used += 1
+    return rejected
+
+
 def reconcile_selected(
     selected_options: Sequence[Any],
     agent_view: Mapping[str, Any],
@@ -436,6 +452,8 @@ def reconcile_selected(
     deploy_opts = [o for o in opts if _harvester_demand(o) > 0]
 
     dropped_reason: Dict[str, str] = {}
+    for identifier in _chaff_over_budget(opts, agent_view):
+        dropped_reason[identifier] = "shared chaff stock exhausted by an earlier selected play"
 
     # ONE pool, ranked by value per harvester committed, filled greedily. Value
     # density is the right key because a 2-wave campaign must clear the bar for
@@ -976,8 +994,18 @@ def pack_recipe(
         live_red_cells=live_red_cells,
         chaff_short=chaff_short,
     )
+    rejected = _chaff_over_budget(selected_options or [], agent_view)
+    budgeted = []
+    seen_chaff = set()
+    for option in selected_options or []:
+        if option.kind == "chaff":
+            if option.option_id in rejected or option.option_id in seen_chaff:
+                pk.log.append(f"cut {option.option_id}: duplicate or shared chaff stock exhausted")
+                continue
+            seen_chaff.add(option.option_id)
+        budgeted.append(option)
     ordered, order_log = _order_for_probe_support(
-        selected_options or [], agent_view,
+        budgeted, agent_view,
     )
     pk.log.extend(order_log)
     # --- weapon-forge hook (installed by forge_install.py) ---

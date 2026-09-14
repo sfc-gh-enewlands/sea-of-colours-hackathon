@@ -15,6 +15,23 @@
 
 ## TOASTIE_JAM: Purchase Evidence (Forge Phases 1-2)
 
+### ITS_MY_GRILL_NOW: Opening Offence
+
+When a live beacon records a rival discovery on the previous turn and we hold
+chaff, offer ITS_MY_GRILL_NOW at H1. No enemy weapon-purchase evidence is needed.
+At the current duration, it denies H1-H3, including the anticipated opening drop.
+Select a separate offered seam/hot-drop route for H4 onward; a required probe
+can put the actual landing at H5. The rival also resumes at H4, so uncontested
+ground is an opportunity rather than a guarantee. Fuzzy beacons do not reveal
+the exact pure coordinates.
+
+Blue funds one shared chaff rack for this offence and TOASTIE_JAM's defence.
+Orbit remains deterministic: buy when affordable and below the existing one-charge
+cap. If both plays are offered, the model chooses; stock reconciliation retains
+the first selected chaff play when only one charge exists and reports the excess.
+The compiler also rejects duplicate/over-budget chaff selections. No harvest
+geometry or harvester ownership is duplicated inside either weapon play.
+
 ### Early Economy (Days 1-4)
 
 Executable redsign/pure/mass routes have priority. Otherwise prioritise blue
@@ -32,7 +49,7 @@ buy-ASAP with the existing one-chaff cap; seeking blue does not raise that cap.
 This is an offline-tested policy, not evidence of improved season scores.
 
 This fork offers an H4 counter-chaff only when we hold chaff, a live beacon
-credits our discovery/co-discovery, and a rival has a surviving hypothesis of an unspent chaff bought
+credits our discovery/co-discovery on the previous turn, and a rival has a surviving hypothesis of an unspent chaff bought
 in one qualifying orbit. It remains a selectable option, not a forced shot.
 
 The declaration uses `when="always"` to build a candidate, not to offer it
@@ -44,12 +61,13 @@ that rivals received an anonymous fuzzy beacon. It does not claim unique priorit
 Successful own probe events at the same discovery day/hour corroborate the
 timing but are optional: harvesters and existing probes can also discover seams.
 No probe-to-seam causality is inferred from coincident timestamps. Attribution
-remains eligible while the beacon is live, not only on its discovery night.
+is recorded while the beacon is live; counter eligibility requires its discovery
+day to be the immediately previous game day.
 
 Public observations expose arsenal value, not individual purchase transactions.
 For consecutive planning days, inferred purchases equal current arsenal minus
 previous arsenal plus the priced value of last night's observed weapon launches.
-A purchase equal to the season's chaff price qualifies; 100 blue on one turn
+A purchase of at least the season's chaff price qualifies; 100 blue on one turn
 and 200 on another do not qualify merely because the rack now totals 300.
 An EMP and SNAP bought together remain indistinguishable from one chaff.
 
@@ -71,6 +89,26 @@ python -m pytest sea_of_colours/orchestrator_2/harnesses/aiml_toastie -q
 
 Generic wiring checks bypass this historical gate. They do not prove purchase
 inference or actual model selection. Live commissioning remains Forge Phase 4.
+
+### Observed Counter Failure and Phase 5 Correction
+
+Fulgur_Marrow, day 3, p2: TOASTIE_JAM was offered with qualifying purchase and
+discovery evidence. The model chose WALKIN_GRAB, SS1 and PR2, predicting an
+early pickup before a supposed H6-H9 jam window. The replay shows p1 chaff at
+H1, our drop cancelled, later steps failing because the unit never landed,
+and p1 harvesting the pure at H5. There was no model fallback.
+
+The fork now replaces inherited chaff safe-hour guidance in the actual prompt.
+It explicitly recommends selecting the COUNTER when enemy H1 chaff is highly
+likely under the gates above; this is a strategic prediction, not certain
+enemy ownership or orders. `chaff_react` reports belief and does not rewrite
+the route. H4 chaff denies H4-H6, derived from `game/weapons.py`; its yield text
+no longer invents an H1 denial or a numerical score without an enemy plan.
+The launcher still self-jams during carry-over, as demonstrated by the replay.
+
+The original checker, frozen baseline and installed forge remain untouched.
+Offline regressions do not prove the model will select the revised counter;
+a controlled live replay remains necessary to measure that.
 
 # V12 — the agent you fork
 

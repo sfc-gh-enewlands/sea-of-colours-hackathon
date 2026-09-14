@@ -1383,6 +1383,11 @@ def format_menu_block(
         if priority:
             lines.append(priority)
     for kind, kind_header in _KIND_HEADERS:
+        if kind == "chaff":
+            kind_header = (
+                "CHAFF COUNTER PLAYS - cancel opponents' actions for "
+                f"{counter_chaff.weapons.CHAFF_DURATION_HOURS} consecutive hours starting at launch"
+            )
         if agent_view is not None and early_economy.active(agent_view) and kind == "blue_grab":
             kind_header = "BLUE FUNDING ROUTES - premium red first; otherwise prioritise these, even with one harvester"
         opts = by_kind.get(kind)

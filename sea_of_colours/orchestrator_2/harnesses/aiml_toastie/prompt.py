@@ -1078,7 +1078,7 @@ def _assemble_doctrine(
     if opp_has_emp or was_empd:
         text += "\n\n" + doctrine.DOCTRINE_BEWARE_EMP
     if opp_has_chaff or was_chaffed:
-        text += "\n\n" + doctrine.DOCTRINE_BEWARE_CHAFF
+        text += "\n\n" + counter_chaff.chaff_guidance(agent_view)
     if opp_has_snap or was_snapped:
         text += "\n\n" + doctrine.DOCTRINE_BEWARE_SNAP
     # --- weapon-forge hook (installed by forge_install.py) ---
@@ -1088,7 +1088,13 @@ def _assemble_doctrine(
     # precisely the cheapest night to fire. This also emits the
     # CORRECTIONS that answer those blocks; without them the survivor
     # framing wins and the weapon stays in the rack.
-    _weapon_doctrine = weapon_forge.doctrine_for(agent_view)
+    _non_chaff_view = dict(agent_view)
+    _non_chaff_view["orbit"] = dict(agent_view.get("orbit") or {})
+    _non_chaff_view["orbit"]["weapon_stock"] = dict(_non_chaff_view["orbit"].get("weapon_stock") or {})
+    _held_chaff = _non_chaff_view["orbit"]["weapon_stock"].pop("chaff", 0)
+    _weapon_doctrine = weapon_forge.doctrine_for(_non_chaff_view)
+    if _held_chaff and not (opp_has_chaff or was_chaffed):
+        text += "\n\n" + counter_chaff.chaff_guidance(agent_view)
     if _weapon_doctrine:
         text += "\n\n" + _weapon_doctrine
 
@@ -1171,7 +1177,11 @@ def build_prompt(
     weapons_block = format_opponent_weapons_block(opponent_weapon_estimates)
     geometry_block = format_weapon_geometry_block(opponent_weapon_estimates)
     # --- weapon-forge hook (installed by forge_install.py) ---
-    rack_block = weapon_forge.format_rack_block(agent_view)
+    rack_view = dict(agent_view)
+    rack_view["orbit"] = dict(agent_view.get("orbit") or {})
+    rack_view["orbit"]["weapon_stock"] = dict(rack_view["orbit"].get("weapon_stock") or {})
+    rack_view["orbit"]["weapon_stock"].pop("chaff", None)
+    rack_block = weapon_forge.format_rack_block(rack_view) + counter_chaff.chaff_rack_block(agent_view)
     # ORBIT GUIDANCE — a single crisp "act on these tonight" block. v11 drops the
     # separate TACTICAL PRIORITY FROM ORBIT (wishlist entries) block: it was a
     # second rendering of the same orbit turn (conserve/replace), and the

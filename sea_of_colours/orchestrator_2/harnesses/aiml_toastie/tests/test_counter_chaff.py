@@ -57,8 +57,8 @@ def test_split_purchases_never_qualify():
     assert not eligible(state)
 
 
-@pytest.mark.parametrize("purchase, expected", [(100, False), (200, False), (300, True), (400, False), (600, False)])
-def test_only_exact_chaff_priced_single_orbit_qualifies(purchase, expected):
+@pytest.mark.parametrize("purchase, expected", [(100, False), (200, False), (300, True), (400, True), (600, True)])
+def test_at_least_chaff_priced_single_orbit_qualifies(purchase, expected):
     state = observe(board(purchase, day=2), observe(board()), day=2)
     assert eligible(state) is expected
 
@@ -75,7 +75,7 @@ def test_unchanged_nights_carry_evidence():
         state = observe(board(300, day=day), state, day=day)
         assert eligible(state)
     assert counter.rival_blue_summary({counter.EVIDENCE_KEY: state}).startswith(
-        "P2: inferred 300-blue purchase in a single orbit on day(s) 2;"
+        "P2: inferred at least 300-blue purchase in a single orbit on day(s) 2;"
     )
 
 
@@ -194,9 +194,10 @@ def test_registry_requires_all_three_gates(case):
 
 def test_declaration_valid_and_honest():
     assert weapon_forge.validate_all() == []
-    assert weapon_plays.PLAYS[0].when == "always"
-    assert "SYMMETRIC" in weapon_plays.PLAYS[0].rationale
-    assert "EMP plus SNAP bought together" in weapon_plays.PLAYS[0].rationale
+    play = next(play for play in weapon_plays.PLAYS if play.play_id == counter.PLAY_ID)
+    assert play.when == "always"
+    assert "SYMMETRIC" in play.rationale
+    assert "EMP plus SNAP bought together" in play.rationale
 
 
 def test_invalid_partial_price_table_cannot_create_evidence():
@@ -312,3 +313,122 @@ def test_seam_pattern_alone_cannot_manufacture_discovery_credit():
         agent_view=view, seam_patterns=[SimpleNamespace(mine=True, waves=[])],
     )
     assert counter.PLAY_ID not in registry
+
+
+@pytest.mark.parametrize("discovery_day,offered", [(1, False), (2, True), (3, False)])
+def test_counter_requires_previous_turn_discovery(discovery_day, offered):
+    view = board(300, day=3)
+    view["meta"]["day"] = 3
+    view["redsign"][0]["day"] = discovery_day
+    view[counter.EVIDENCE_KEY] = observe(view, qualified(), day=3)
+    assert (counter.PLAY_ID in agency.build_registry(agent_view=view)) is offered
+
+
+def test_recorded_day_three_counter_text_has_correct_window():
+    view = board(300, day=3)
+    view["meta"]["day"] = 3
+    view["redsign"][0]["day"] = 2
+    view[counter.EVIDENCE_KEY] = observe(view, qualified(), day=3)
+    registry = agency.build_registry(agent_view=view)
+    menu = agency.format_menu_block(registry, agent_view=view, day=3, day_cap=7)
+    assert "COUNTER DENIAL at H4-H6" in menu
+    assert "hour-one move" not in menu
+    assert "~+76 taken" not in menu
+    assert "Score denied is unknown" in menu
+    assert "select for highly likely enemy H1 chaff" in menu
+
+
+def test_actual_prompt_removes_safe_hours_and_fake_auto_shortening():
+    from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import prompt
+
+    view = board(300, day=2)
+    view[counter.EVIDENCE_KEY] = qualified()
+    assembled = prompt.build_prompt(
+        agent_view=view, day=2, day_cap=7, vault_score=0,
+        memory_replay="", chain_hints=[],
+    )
+    assert "Prefer pickup at hour <= 4" not in assembled
+    assert "safe for YOUR pickups" not in assembled
+    assert "No early hour is inherently safe" in assembled
+    assert "chaff_react reports a belief only" in assembled
+    assert "select this COUNTER at H4" in assembled
+    assert "plan our follow-up from H7" in assembled
+
+
+def test_duration_text_uses_canonical_weapon_definition(monkeypatch):
+    monkeypatch.setattr(counter.weapons, "CHAFF_DURATION_HOURS", 4)
+    assert counter.chaff_window(5) == (5, 8)
+    assert "select this COUNTER at H5" in counter.chaff_guidance({})
+    assert "their H5-H8" in counter.chaff_guidance({})
+    assert "4 consecutive hours" in counter.chaff_rack_block(board())
+
+
+@pytest.mark.parametrize("mine,age,stock,expected", [
+    (False, 1, 1, True), (True, 1, 1, False), (False, 2, 1, False),
+    (False, 1, 0, False), (False, 0, 1, False), (None, 1, 1, False),
+])
+def test_offensive_gate_without_enemy_purchase_evidence(mine, age, stock, expected):
+    view = board(0, day=3, mine=mine, own_stock=stock)
+    view["meta"]["day"] = 3
+    view["redsign"][0]["day"] = 3 - age
+    registry = agency.build_registry(agent_view=view)
+    assert (counter.OFFENCE_ID in registry) is expected
+
+
+def both_plays(stock=1):
+    view = board(300, day=2, own_stock=stock)
+    view["meta"]["day"] = 2
+    view[counter.EVIDENCE_KEY] = qualified()
+    view["redsign"].append({**view["redsign"][0], "mine": False, "id": "redsign-rival"})
+    return view, agency.build_registry(agent_view=view)
+
+
+def test_both_plays_share_one_charge_and_report_excess():
+    view, registry = both_plays()
+    attack, defend = registry[counter.OFFENCE_ID], registry[counter.PLAY_ID]
+    kept, report = packager.reconcile_selected([attack, defend], view)
+    assert attack in kept and defend not in kept
+    assert any(row["id"] == counter.PLAY_ID and row["status"] == "dropped" for row in report)
+    moves, notes = packager.pack_recipe([attack, defend, attack], view, complete=False)
+    assert sum(move["a"] == "chaff_flare" for move in moves) == 1
+    assert notes
+
+
+def test_two_real_charges_allow_both_launch_windows():
+    view, registry = both_plays(stock=2)
+    moves, _ = packager.pack_recipe(
+        [registry[counter.OFFENCE_ID], registry[counter.PLAY_ID]], view, complete=False,
+    )
+    assert [index + 1 for index, move in enumerate(moves) if move["a"] == "chaff_flare"] == [1, 4]
+
+
+def test_offence_then_actual_seam_followup_survives():
+    view, registry = both_plays()
+    view["my_assets"] = [{"kind": "harvester", "state": "orbit", "id": "h1"}]
+    view["probe_stock"] = 1
+    view["orbit"]["probe_stock"] = 1
+    followup = agency.Option("FOLLOW", "seam", "", "", payload={"waves": [{
+        "wave": 1, "earliest_hour": 1, "probe_at": [10, 9],
+        "drop_at": [10, 10], "comb_path": [[11, 10]],
+    }]})
+    moves, _ = packager.pack_recipe([followup, registry[counter.OFFENCE_ID]], view, complete=False)
+    assert [move["a"] for move in moves[:4]] == ["chaff_flare", "wait", "wait", "probe"]
+    assert moves[4]["a"] == "drop"
+    assert moves[4]["at"] == [10, 10]
+    assert moves[-1]["a"] == "pickup"
+
+
+def test_offensive_strategy_reaches_prompt():
+    from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import prompt
+
+    view, registry = both_plays()
+    menu = agency.format_menu_block(registry, agent_view=view, day=2, day_cap=7)
+    assembled = prompt.build_prompt(
+        agent_view=view, day=2, day_cap=7, vault_score=0, memory_replay="",
+        chain_hints=[], option_menu_block=menu,
+    )
+    assert counter.OFFENCE_ID in menu
+    assert "OFFENSIVE DENIAL H1-H3" in menu
+    assert "bank blue to buy chaff in orbit for offence" in assembled
+    assert "defence (TOASTIE_JAM)" in assembled
+    assert "opportunity, not certain uncontested red" in assembled
