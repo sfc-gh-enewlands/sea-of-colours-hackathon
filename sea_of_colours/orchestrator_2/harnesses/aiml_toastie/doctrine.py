@@ -193,10 +193,10 @@ WHAT IS CERTAIN AND WHAT IS A WAGER (read this first — it decides the night):
   1". Units are named by ordinal — "the 2nd harvester". Menu titles carry both,
   e.g. "Secure the mass ring (2nd harvester, H09)".
 
-  1. THE FIRST-HOUR DROP IS THE ONLY CERTAINTY IN THE GAME. You drop, the landing
-     cell auto-harvests. No rival walk, no collision, no EMP can prevent it.
-     CHAFF is the single exception. Everything after that landing — every step,
-     the pickup itself — is contingent.
+  1. AN H1 DROP IS CONDITIONAL, NOT CERTAIN. A successful landing auto-harvests,
+     but opening chaff can cancel it regardless of enemy vision. Every step
+     depending on that landing and the pickup then fails. Price the entire
+     route under the opening-threat scenario before ranking its potential yield.
 
   2. THE WAGER STAKES THE WHOLE HOLD, NOT THE NEXT CELL. Cargo banks at PICKUP,
      and a crash or jam ZEROES the hold. So step 3 of a walk does not risk step
@@ -230,7 +230,7 @@ WHAT IS CERTAIN AND WHAT IS A WAGER (read this first — it decides the night):
      EMP: SHORT GRAB. Three blind stabs are three independent rolls, not one.
 
   5. THE TWO WEAPONS HAVE OPPOSITE ANSWERS — they do not substitute:
-       * CHAFF attacks the CERTAINTY (it denies the landing) -> GO AGAIN. Stage a
+       * CHAFF attacks the landing -> consider the offered counter and a
          second bite at the same pure at a later hour; a jammed H1 leaves the
          pure ON THE BOARD for it.
        * EMP attacks the EXTENSION (it kills a walking harvester) -> GO SHALLOW.
@@ -353,15 +353,14 @@ REDSIGN POKER (no weapons in play) — a public pure-RED beacon is a HONEYPOT:
   THREE WAYS TO TAKE IT — A REAL CHOICE, NOT A RULE. The menu offers all of
   them; weigh them yourself. They sit on a ladder of certainty-for-points, and
   it is the SAME harvester, so pick exactly one:
-    * SMASH_GRAB (the CERTAIN play) — land STRAIGHT on the pure, it
-      auto-harvests, lift at H2. Zero steps, two hours. You bank the jackpot
-      (~765) for CERTAIN and leave the rest of the seam. Nothing on the board
-      beats an H1 landing: not a rival's walk, not a collision, not an EMP.
-      CHAFF is the only thing that denies it.
+    * SMASH_GRAB (the SHORT play) — land STRAIGHT on the pure, auto-harvest,
+      lift at H2. Zero steps, two hours if both actions resolve. Opening chaff
+      cancels this outing: potential jackpot is not certain banked value.
+      Follow the threat-conditioned comparison when TOASTIE_JAM is offered.
     * SMASH_GRAB_VALUE (the SMALL trade) — the same drop, then ONE or TWO steps
       onto adjacent MASS/PURE only, then lift. Usually a large fraction of the
       seam's points for a couple of extra hours of exposure. The drop is still
-      guaranteed; the steps are not. Good on a quiet board against one rival —
+      conditional on successful resolution, as are the steps. Good on a quiet board against one rival —
       they would have to get lucky with a blind attack to catch you. Bad with
       chaff/EMPs about or with three rivals converging, because now several
       independent blind attacks are searching the same ground.
@@ -413,7 +412,7 @@ REDSIGN POKER (no weapons in play) — a public pure-RED beacon is a HONEYPOT:
     * SMASH_GRAB (1st harvester, H01) — the GRAB is the DROP. Land ON the pure — it auto-harvests,
       so the jackpot banks as parcel #1 the instant you touch down. Drop STRAIGHT
       (no probe) and lift: ZERO extra steps, always. A direct smash is EMP-PROOF
-      (it resolves in one hour). The CERTAIN grab.
+  (the landing uses one hour). The SHORT grab, still vulnerable to opening chaff.
     * SMASH_GRAB_VALUE (same harvester as SMASH_GRAB, H01) — the drop, then 1-2
       steps onto touching MASS/PURE, then lift. Never runs past two squares and
       never spends a step on trace. Offered only when such cells actually exist.

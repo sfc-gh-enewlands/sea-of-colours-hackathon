@@ -15,6 +15,26 @@
 
 ## TOASTIE_JAM: Purchase Evidence (Forge Phases 1-2)
 
+### Phase 5: Threat-Conditioned Counter Plans
+
+When TOASTIE_JAM is offered, the menu compares an exposed opening grab,
+a delayed grab without denial, and the counter followed by harvest before
+applying premium-red priorities. Short routes are not described as certain:
+an H1 chaff can cancel the drop regardless of enemy vision, invalidating
+dependent steps and pickup. A later mass wave does not save that first outing.
+
+`counter_plans.py` previews pairs of existing option IDs through reconciliation,
+compilation and sanitization, using the real move cap and known hazard cells.
+It checks budgets, the counter window, landing vision, route preservation,
+non-overlapping harvest paths and completed pickups. At most two alternatives
+show actual drop/pickup hours and conditional red value. Nothing is auto-selected.
+If no pair validates, the menu says so rather than promising a safe timeline.
+
+Validation applies to the exact pair against the current view, not enemy actions.
+Additional selections, avoidance constraints and later autofill are not part of
+the displayed pair. Potential harvest is never a guaranteed score; later enemy
+activity can still defeat it. Live model selection remains to be measured.
+
 ### ITS_MY_GRILL_NOW: Opening Offence
 
 When a live beacon records a rival discovery on the previous turn and we hold

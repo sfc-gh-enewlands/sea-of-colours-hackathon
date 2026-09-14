@@ -1352,7 +1352,7 @@ def collision_risk(
         reason = (
             f"PUBLIC redsign — EVERY seat got the broadcast and IS COMING for "
             f"this pure, {vision_s}; {rich_s}, so weigh a fast smash-and-lift "
-            "(sure) against sweeping the whole seam (more points, but a longer "
+            "(short exposure, not guaranteed) against sweeping the whole seam (more points, but a longer "
             "walk risks a collision/jam that zeroes unlifted cargo — a risk "
             "that rises with more rivals and later in the season)"
         )

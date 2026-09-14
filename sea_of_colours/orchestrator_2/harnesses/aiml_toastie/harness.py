@@ -574,6 +574,7 @@ def run(
         harvesters_alive=harvesters_alive,
         day=day,
         day_cap=day_cap,
+        hazard_cells=hazard_cells,
     )
 
     prompt_kwargs: Dict[str, Any] = dict(

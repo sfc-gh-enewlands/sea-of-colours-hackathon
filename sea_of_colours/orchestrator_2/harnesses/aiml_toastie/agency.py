@@ -36,6 +36,7 @@ from typing import Any, Collection, Dict, List, Mapping, Optional, Sequence, Tup
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import chain_filter
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import comb_shapes
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import counter_chaff
+from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import counter_plans
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import early_economy
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import option_economics
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import packager
@@ -1312,6 +1313,7 @@ def format_menu_block(
     harvesters_alive: Optional[int] = None,
     day: Optional[int] = None,
     day_cap: Optional[int] = None,
+    hazard_cells: Collection[Tuple[int, int]] = (),
 ) -> str:
     """Render the ID'd option menu for the THINKER to select from.
 
@@ -1363,7 +1365,7 @@ def format_menu_block(
             f"\n  PROBE BUDGET: you have {int(probe_stock)} probe(s) in stock this "
             "night. Options are tagged with their probe cost; the sum of your "
             "picks' costs must not exceed your stock. Zero-probe GRABS / JUICE "
-            "CHAINS always execute — prefer them when probes are scarce."
+            "CHAINS spend no probes, but still depend on vision, successful actions and interference."
         )
     # Fix 0.3 (OBS-30) — a menu-WIDE pass before anything renders. Each yield is
     # honest on its own and the set of them is not: the same pure is sold by
@@ -1379,10 +1381,18 @@ def format_menu_block(
 
     lines: List[str] = [header]
     if agent_view is not None:
+        comparison = counter_plans.comparison(
+            registry, agent_view, day=day or 0, day_cap=day_cap or 7,
+            hazard_cells=hazard_cells,
+        )
+        if comparison:
+            lines.append(comparison)
         priority = early_economy.directive(registry, agent_view)
         if priority:
             lines.append(priority)
     for kind, kind_header in _KIND_HEADERS:
+        if kind == "grab" and counter_chaff.PLAY_ID in registry:
+            kind_header = "PREMIUM RED CANDIDATES - potential value; opening-threat comparison decides timing"
         if kind == "chaff":
             kind_header = (
                 "CHAFF COUNTER PLAYS - cancel opponents' actions for "
@@ -1402,6 +1412,8 @@ def format_menu_block(
             )
         lines.append(f" {kind_header}:")
         blurb = _KIND_BLURB.get(kind)
+        if kind == "grab" and counter_chaff.PLAY_ID in registry:
+            blurb = "No probe expenditure is not protection from chaff. Compare exposed and counter-protected schedules before choosing."
         if blurb:
             lines.append(f"   ({blurb})")
         if kind == "seam" and agent_view is not None:
@@ -1416,6 +1428,8 @@ def format_menu_block(
             else:
                 tag = "  · no probe"
             lines.append(opt.menu_line() + tag)
+            if counter_chaff.PLAY_ID in registry and packager._harvester_demand(opt) > 0:
+                lines.append("       OPENING EXPOSURE: listed harvest is potential, not secured. Any drop during predicted H1 chaff fails regardless of enemy vision; its dependent steps/pickup cannot bank it. Use the validated pair timeline, not the standalone H1 title.")
             # v12 fix 3.1 — the WHY sits directly under the geometry, above the
             # economics, so the trade is read before the numbers are weighed.
             if opt.rationale:

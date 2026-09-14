@@ -79,6 +79,8 @@ def directive(registry: Mapping[str, Any], view: Mapping[str, Any]) -> str:
         "Premium red first: " + ", ".join(premium)
         if premium else "No executable premium-red option: prioritise blue/bluesign " + (", ".join(blue) or "exploration")
     )
+    if "TOASTIE_JAM" in registry:
+        target = "Opening-chaff comparison takes precedence; premium red is potential value, not an instruction to launch at H1"
     return (
         "EARLY ECONOMY (days 1-4): " + target + ". "
         "Use spare capacity for blue to fund chaff; keep seeking blue on non-premium nights "

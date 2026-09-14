@@ -1864,11 +1864,11 @@ def _mine_patterns(
         rationale=(
             "Engine-truth says this beacon is yours, so you already know where "
             "the pure sits. Drop on it, auto-harvest, lift — no walk, no "
-            "exposure beyond the landing. In redsign poker this is the one "
-            "CERTAIN move on the board: it cannot be beaten to the cell, cannot "
-            "be crashed mid-walk, and cannot be EMP'd. Only chaff denies it. "
-            "Everything richer than this trades that certainty for points — "
-            "which is often right, but it IS the trade you are making."
+            "walking exposure. This is a short route, NOT guaranteed income: "
+            "an opening chaff cancels the drop and pickup. Enemy vision is not "
+            "required for global chaff. Evaluate the opening-threat comparison "
+            "before choosing this over a counter followed by a delayed grab. "
+            "The listed yield requires successful landing and recovery."
         ) + ("" if core_visioned else (
             " Here the pure is remembered, not seen, so it costs a probe and an "
             "extra hour to light before you can land — and the echo itself may "
@@ -2012,7 +2012,8 @@ def _mine_patterns(
                 "the smash — but it is a gamble: a collision or jam mid-walk loses "
                 "the unlifted cargo, and the danger grows with more players and as "
                 "the season ends. Weigh the value against the risk; SMASH_GRAB is "
-                "the sure alternative, and a 2nd harvester lets you take both."
+            "the shorter alternative, not a guaranteed harvest. A second harvester "
+            "does not protect the first one's cancelled drop."
             ),
             waves=[SeamWave(
                 1, _H_SMASH, drop1, comb_full, probe_at=wave1_probe,
