@@ -31,7 +31,7 @@ from __future__ import annotations
 from typing import Any, List, Mapping, Sequence
 
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import (
-    counter_chaff, digest, doctrine, option_economics, out_of_grid, rules, world_view,
+    counter_chaff, digest, doctrine, early_economy, option_economics, out_of_grid, rules, world_view,
 )
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie._v7.orbit_wishlist import (
     Wishlist,
@@ -426,6 +426,8 @@ def blue_is_requested(agent_view: Mapping[str, Any]) -> bool:
     # wrong question for an armed seat: a 'medium' vault can hold 150
     # and still be 150 short of a charge. Also ask whether the rack
     # can fire at all.
+    if early_economy.active(agent_view):
+        return bool(agent_view.get("blue_tiles") or agent_view.get("blue_sign")) and bool(_orbit_harvester_ids(agent_view))
     if not (blue_vault_is_short(agent_view)
             or weapon_forge.blue_also_requested(agent_view)):
         return False

@@ -36,6 +36,7 @@ from typing import Any, Collection, Dict, List, Mapping, Optional, Sequence, Tup
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import chain_filter
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import comb_shapes
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import counter_chaff
+from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import early_economy
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import option_economics
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import packager
 from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import value_pyramid
@@ -741,6 +742,9 @@ def build_registry(
     committed to" at compile time, and only the first is useful to the agent.
     """
     reg: "OrderedDict[str, Option]" = OrderedDict()
+    if early_economy.active(agent_view):
+        chain_hints = [hint for hint in chain_hints if early_economy.eligible_chain(hint, agent_view)]
+        blue_requested = True
     # --- weapon-forge hook (installed by forge_install.py) ---
     # Declared weapon plays go in first; their PRINTED position comes
     # from _KIND_HEADERS order below, not from insertion order.
@@ -861,6 +865,7 @@ def build_registry(
         reg[opt.option_id] = opt
 
     _apply_hazard(reg, hazard_cells)
+    early_economy.apply(reg, agent_view)
     return reg
 
 
@@ -1373,7 +1378,13 @@ def format_menu_block(
         overlaps = option_economics.overlap_claims(walks, agent_view)
 
     lines: List[str] = [header]
+    if agent_view is not None:
+        priority = early_economy.directive(registry, agent_view)
+        if priority:
+            lines.append(priority)
     for kind, kind_header in _KIND_HEADERS:
+        if agent_view is not None and early_economy.active(agent_view) and kind == "blue_grab":
+            kind_header = "BLUE FUNDING ROUTES - premium red first; otherwise prioritise these, even with one harvester"
         opts = by_kind.get(kind)
         if not opts:
             continue

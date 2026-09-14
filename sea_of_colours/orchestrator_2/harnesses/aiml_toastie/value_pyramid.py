@@ -132,6 +132,10 @@ def _red_by_provenance(
 
 def _rich_blue(agent_view: Mapping[str, Any]) -> Dict[Tuple[int, int], int]:
     """LIVE blue tiles at/above the grab floor, keyed (x, y) -> purity."""
+    from . import early_economy, packager
+
+    early = early_economy.active(agent_view)
+    probes = set(packager._live_probe_cells(agent_view)) if early else set()
     out: Dict[Tuple[int, int], int] = {}
     for row in (agent_view.get("blue_tiles") or []):
         if not isinstance(row, Mapping):
@@ -141,7 +145,7 @@ def _rich_blue(agent_view: Mapping[str, Any]) -> Dict[Tuple[int, int], int]:
             p = int(row.get("purity") or 0)
         except (TypeError, KeyError, ValueError):
             continue
-        if p >= _BLUE_GRAB_MIN:
+        if p >= _BLUE_GRAB_MIN or (early and p > 0 and (x, y) not in probes):
             out[(x, y)] = p
     return out
 

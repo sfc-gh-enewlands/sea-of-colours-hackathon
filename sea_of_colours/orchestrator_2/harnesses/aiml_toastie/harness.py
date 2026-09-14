@@ -74,6 +74,7 @@ from sea_of_colours.orchestrator_2.harnesses.aiml_toastie import (
     chain_filter,
     chat_schema as v10_chat_schema,
     counter_chaff,
+    early_economy,
     frontier as frontier_mod,
     hazard_memory as hazard_memory_mod,
     hint_dispersion as hint_dispersion_mod,
@@ -310,6 +311,7 @@ def run(
     meta = agent_view.get("meta") or {}
     hud = agent_view.get("hud") or {}
     day = int(meta.get("day") or hud.get("day") or 0)
+    agent_view["toastie_day"] = day
     day_cap = int(hud.get("season_day_cap") or 7)
     scores = hud.get("scores") or {}
     vault_score = int(scores.get(player) or 0)
@@ -398,6 +400,8 @@ def run(
     chain_hints = chain_filter.dedupe_and_floor(
         heuristic_chains.top_chain_hints(agent_view, max_chains=8),
     )[:5]
+    if early_economy.active(agent_view):
+        chain_hints = [hint for hint in chain_hints if early_economy.eligible_chain(hint, agent_view)]
     # Probe menu = ANCHORED (assured/near-assured) + FRONTIER (speculative).
     #   * Anchored probes enable a known target (redsign/echo/seam extension) —
     #     they stay DETERMINISTIC (go where the value is); pulled from the shared

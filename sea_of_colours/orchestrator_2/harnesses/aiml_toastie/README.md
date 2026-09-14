@@ -15,6 +15,22 @@
 
 ## TOASTIE_JAM: Purchase Evidence (Forge Phases 1-2)
 
+### Early Economy (Days 1-4)
+
+Executable redsign/pure/mass routes have priority. Otherwise prioritise blue
+and bluesign to fund chaff, including with a single harvester and after the
+first chaff is held. Vein/trace-only harvesting options are removed after the
+registry's idle-fleet backstop; compiler completion cannot restore them.
+Incidental low-value cells on a premium/blue route remain valid.
+
+Lower-purity blue can be offered early where harvesting does not require
+crushing a friendly probe. Existing vision, stock and sanitizer checks remain.
+If neither premium red nor blue is executable, explore legally or wait.
+Day 5 onward retains the previous thresholds and strategy. Buying remains
+buy-ASAP with the existing one-chaff cap; seeking blue does not raise that cap.
+
+This is an offline-tested policy, not evidence of improved season scores.
+
 This fork offers an H4 counter-chaff only when we hold chaff, a live beacon
 credits our discovery/co-discovery, and a rival has a surviving hypothesis of an unspent chaff bought
 in one qualifying orbit. It remains a selectable option, not a forced shot.

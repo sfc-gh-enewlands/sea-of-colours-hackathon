@@ -890,6 +890,10 @@ def _complete_utilization(
             if _cell(h.get("drop_at")) is not None
             and _cell(h.get("drop_at")) not in pk._drop_cells
         ]
+        from . import early_economy
+
+        if early_economy.active(agent_view):
+            candidates = [hint for hint in candidates if early_economy.eligible_chain(hint, agent_view)]
         if not candidates:
             break
         chosen = max(candidates, key=lambda h: _harvest_value(h, agent_view))
